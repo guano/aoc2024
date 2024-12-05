@@ -89,4 +89,7 @@ pub fn main() !void {
         try list.append(line);
     }
     try cham.red().bold().printErr("File {s} has completed reading: {d} lines\n", .{ infile, list.items.len });
+
+    const day3 = @import("day3.zig");
+    try day3.main();
 }
