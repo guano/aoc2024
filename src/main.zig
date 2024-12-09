@@ -56,10 +56,11 @@ pub fn main() !void {
     const args = try std.process.argsAlloc(std.heap.page_allocator);
     defer std.process.argsFree(std.heap.page_allocator, args);
 
-    if (args.len < 2) {
-        std.debug.print("You idiot, you need to give the filename for the day as input!\n", .{});
+    if (args.len < 3) {
+        std.debug.print("Usage: aoc2024 [day] [inputfilename.txt]\n", .{});
         return error.ExpectedArgument;
     }
+    const day: u8 = args[2][0];
     const infile = args[1];
 
     ////////////////////////////////////
@@ -82,6 +83,7 @@ pub fn main() !void {
     var cham = Chameleon.initRuntime(.{ .allocator = allocator });
     defer cham.deinit();
     try cham.green().bold().printErr("Hello, world!\n", .{});
+    try cham.green().bold().printErr("Type of cham: {any}\n", .{cham});
 
     ////////////////////////////////////
     // Reading the file
@@ -90,6 +92,20 @@ pub fn main() !void {
     }
     try cham.red().bold().printErr("File {s} has completed reading: {d} lines\n", .{ infile, list.items.len });
 
-    const day3 = @import("day3.zig");
-    try day3.main();
+    switch (day) {
+        '3' => {
+            try cham.red().bold().printErr("day 3 trying to read\n", .{});
+            const day3_2023 = @import("day3_2023.zig");
+            try cham.red().bold().printErr("day 3 trying to read\n", .{});
+            try day3_2023.main();
+            try cham.red().bold().printErr("day 3 trying to read\n", .{});
+        },
+        '1' => {
+            const day1 = @import("day1.zig");
+            try day1.day1(allocator, &list);
+        },
+        else => {
+            try cham.red().bold().printErr("Day {d} has not yet been implemented\n", .{day});
+        },
+    }
 }
