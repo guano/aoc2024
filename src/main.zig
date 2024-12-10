@@ -83,23 +83,16 @@ pub fn main() !void {
     var cham = Chameleon.initRuntime(.{ .allocator = allocator });
     defer cham.deinit();
     try cham.green().bold().printErr("Hello, world!\n", .{});
-    try cham.green().bold().printErr("Type of cham: {any}\n", .{cham});
+    try cham.green().bold().printErr("Type of cham: {any}...{any}\n", .{ @TypeOf(cham), cham });
 
     ////////////////////////////////////
     // Reading the file
-    while (try in_stream.readUntilDelimiterOrEofAlloc(allocator, '\n', 1024)) |line| {
+    while (try in_stream.readUntilDelimiterOrEofAlloc(allocator, '\n', 10240)) |line| {
         try list.append(line);
     }
     try cham.red().bold().printErr("File {s} has completed reading: {d} lines\n", .{ infile, list.items.len });
 
     switch (day) {
-        '3' => {
-            try cham.red().bold().printErr("day 3 trying to read\n", .{});
-            const day3_2023 = @import("day3_2023.zig");
-            try cham.red().bold().printErr("day 3 trying to read\n", .{});
-            try day3_2023.main();
-            try cham.red().bold().printErr("day 3 trying to read\n", .{});
-        },
         '1' => {
             const day1 = @import("day1.zig");
             try day1.day1(allocator, &list);
@@ -107,6 +100,10 @@ pub fn main() !void {
         '2' => {
             const day2 = @import("day2.zig");
             try day2.day2(allocator, &list);
+        },
+        '3' => {
+            const day3 = @import("day3.zig");
+            try day3.day3(allocator, &list, &cham);
         },
         else => {
             try cham.red().bold().printErr("Day {d} has not yet been implemented\n", .{day});
