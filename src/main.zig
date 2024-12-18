@@ -113,6 +113,10 @@ pub fn main() !void {
             const day5 = @import("day5.zig");
             try day5.day5(allocator, &list, &cham);
         },
+        '6' => {
+            const day6 = @import("day6.zig");
+            try day6.day6(allocator, &list, &cham);
+        },
         else => {
             try cham.red().bold().printErr("Day {d} has not yet been implemented\n", .{day});
         },
