@@ -57,7 +57,7 @@ pub fn main() !void {
     defer std.process.argsFree(std.heap.page_allocator, args);
 
     if (args.len < 3) {
-        std.debug.print("Usage: aoc2024 [day] [inputfilename.txt]\n", .{});
+        std.debug.print("Usage: aoc2024 [inputfilename.txt] [day]\n", .{});
         return error.ExpectedArgument;
     }
     const day: u8 = args[2][0];
