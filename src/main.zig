@@ -73,8 +73,10 @@ pub fn main() !void {
 
     ////////////////////////////////////
     // Allocating an ArrayList for the file contents
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const allocator = gpa.allocator();
+    //var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    //const allocator = gpa.allocator();
+    //// With the page allocator, day 6 part 2 went from 15 mins to 3m45.563s
+    const allocator = std.heap.page_allocator;
     var list = std.ArrayList([]u8).init(allocator);
     defer list.deinit();
 
