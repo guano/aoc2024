@@ -88,7 +88,7 @@ fn takeStep(grid: [][]u8, guard: Coord, cham: *Chameleon.RuntimeChameleon) ?Coor
     return takeStep(grid, rotated_step, cham);
 }
 
-fn runSim(allocator: std.mem.Allocator, grid: [][]u8, cham: *Chameleon.RuntimeChameleon) !struct{u32, u32, bool} {
+fn runSim(allocator: std.mem.Allocator, grid: [][]u8, cham: *Chameleon.RuntimeChameleon, firstpath: ?*std.ArrayList(Coord)) !struct{u32, u32, bool} {
     // The set of all locations the guard has visited
     var visitedset = std.BufSet.init(allocator);
     defer visitedset.deinit();
@@ -132,6 +132,10 @@ fn runSim(allocator: std.mem.Allocator, grid: [][]u8, cham: *Chameleon.RuntimeCh
         if (!visitedset.contains(&coord_array)) {
             try visitedset.insert(&coord_array);
             total += 1;
+
+            if (firstpath != null) {
+                try firstpath.?.append(Coord{ .x = new_guard.x, .y = new_guard.y, .dir = new_guard.dir });
+            }
         }
         guard = new_guard;
     }
@@ -148,6 +152,9 @@ fn runSim(allocator: std.mem.Allocator, grid: [][]u8, cham: *Chameleon.RuntimeCh
 }
 
 pub fn day6(allocator: std.mem.Allocator, file: *std.ArrayList([]u8), cham: *Chameleon.RuntimeChameleon) !void {
+    var firstpath = std.ArrayList(Coord).init(allocator);
+    defer firstpath.deinit();
+
     //pub fn initCapacity(allocator: Allocator, num: usize) Allocator.Error!Self
     var grid = file.items;
 
@@ -157,7 +164,7 @@ pub fn day6(allocator: std.mem.Allocator, file: *std.ArrayList([]u8), cham: *Cha
     }
 
     print = false;
-    var result = try runSim(allocator, grid, cham);
+    var result = try runSim(allocator, grid, cham, &firstpath);
     const total = result[0];
     const total_dirs = result[1];
     const is_infinite = result[2];
@@ -170,26 +177,55 @@ pub fn day6(allocator: std.mem.Allocator, file: *std.ArrayList([]u8), cham: *Cha
         try cham.green().bold().printOut("is not infinite\n", .{});
     }
 
+    for (firstpath.items) |path_coord| {
+        try cham.blue().bold().printOut("guard's path: {any}\n", .{path_coord});
+    }
+    try cham.blue().bold().printOut("size of guard's path: {d}\n", .{firstpath.items.len});
+
     var infinity_count: u32 = 0;
     print = false;
-    for (grid, 0..) |row, row_index| {
-        for (row, 0..) |char, char_index| {
-            if (char == '.') {
-                try cham.yellow().bold().printOut("adding block at {d},{d}\t", .{row_index, char_index});
-                grid[row_index][char_index] = '#';
-                //for (grid) |line| {
-                //    try cham.yellow().printOut("{s}\n", .{line});
-                //}
-                result = try runSim(allocator, grid, cham);
-                if (result[2] == true) {
-                    infinity_count += 1;
-                }
-                grid[row_index][char_index] = '.';
+    // This was a brute-force attempt to put a barrier at every point on the grid which didn't already have one
+    // it was taking too long to compute
+    //for (grid, 0..) |row, row_index| {
+    //    for (row, 0..) |char, char_index| {
+    //        if (char == '.') {
+    //            try cham.yellow().bold().printOut("adding block at {d},{d}\t", .{row_index, char_index});
+    //            grid[row_index][char_index] = '#';
+    //            //for (grid) |line| {
+    //            //    try cham.yellow().printOut("{s}\n", .{line});
+    //            //}
+    //            result = try runSim(allocator, grid, cham, null);
+    //            if (result[2] == true) {
+    //                infinity_count += 1;
+    //            }
+    //            grid[row_index][char_index] = '.';
+    //        }
+    //    }
+    //}
+
+    // OMG Ok I figured something out- there's the base case with no insertion. I don't think the guard goes through every spot. So inserting a barrier somewhere not in his path won't affect anything.
+    // That should be a decent limit on tests
+    // update: it limited it to 5176 different options
+    // which took almost 15 minutes long. Better than an hour though I guess.
+    for (firstpath.items) |path_coord| {
+        // Note x and y are swapped from what they normally are. Cause I'm not rigorous.
+        if (grid[path_coord.y][path_coord.x] == '.') {
+            try cham.yellow().bold().printOut("adding block at {d},{d}\t", .{path_coord.y, path_coord.x});
+            grid[path_coord.y][path_coord.x] = '#';
+            //for (grid) |line| {
+            //    try cham.yellow().printOut("{s}\n", .{line});
+            //}
+            result = try runSim(allocator, grid, cham, null);
+            if (result[2] == true) {
+                infinity_count += 1;
             }
+            grid[path_coord.y][path_coord.x] = '.';
+
+        } else {
+            try cham.red().bold().printOut("\n{any} isn't empty???\n", .{path_coord});
         }
     }
-    try cham.yellow().bold().printOut("\nTotal infinity count: {d}\n", .{infinity_count});
 
-    // Current status: I think this works, but it takes too long. Like I would expect it to take an hour long. Waitable, but there's probably a faster way
+    try cham.yellow().bold().printOut("\nTotal infinity count: {d}\n", .{infinity_count});
 }
 
